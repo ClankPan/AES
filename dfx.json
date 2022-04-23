@@ -4,6 +4,10 @@
       "main": "src/AES/main.mo",
       "type": "motoko"
     },
+    "utl_test" : {
+      "main": "src/AES/test.mo",
+      "type": "motoko"
+    },
     "AES_assets": {
       "dependencies": [
         "AES"

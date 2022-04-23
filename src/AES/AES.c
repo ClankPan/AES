@@ -56,24 +56,51 @@ int main()
   nk = 4;               //鍵の長さ 4,6,8(128,192,256 bit)
   nr = nk + 6;          //ラウンド数 10,12,14
 
-  printf("SubWord  0: %d, 1: %d, 2: %d\n",SubWord(0), SubWord(1), SubWord(2));
-  printf("RotWord  0: %d, 1: %d, 2: %d\n",RotWord(10), RotWord(100), RotWord(200));
+  KeyExpansion(key);    //暗号化するための鍵の準備
+  memcpy(data,init,NBb); //NBにて 4ワード 16バイトと定義している
 
-  // KeyExpansion(key);    //暗号化するための鍵の準備
-  // memcpy(data,init,NBb); //NBにて 4ワード 16バイトと定義している
-
-  // datadump("w : ",w,60);
-
-  // printf("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
-  // datadump("PLAINTEXT: ",data,4);
-  // datadump("KEY:       ",key,4);
-  // Cipher(data);
-  // datadump("暗号化:    ",data,4);
-  // invCipher(data);
-  // datadump("復号化:    ",data,4);
-  // printf("\n");
+  printf("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
+  datadump("PLAINTEXT: ",data,4);
+  datadump("KEY:       ",key,4);
+  Cipher(data);
+  datadump("暗号化:    ",data,4);
+  invCipher(data);
+  datadump("復号化:    ",data,4);
+  printf("\n");
 
 
+  /* FIPS 197  P.38 Appendix C.2 AES-192 Test */
+  memcpy(key,keys,24);
+  nk = 6;               //鍵の長さ 4,6,8(128,192,256 bit)
+  nr = nk + 6;          //ラウンド数 10,12,14
+
+  KeyExpansion(key);    //暗号化するための鍵の準備
+  memcpy(data,init,NBb); //NBにて 4ワード 16バイトと定義している
+
+  printf("  <FIPS 197  P.38 Appendix C.2 AES-192 TEST>\n\n");
+  datadump("PLAINTEXT: ",data,4);
+  datadump("KEY:       ",key,6);
+  Cipher(data);
+  datadump("暗号化:    ",data,4);
+  invCipher(data);
+  datadump("復号化:    ",data,4);
+  printf("\n");
+
+  /* FIPS 197  P.42 Appendix C.3 AES-256 Test */
+  memcpy(key,keys,32);
+  nk = 8;               //鍵の長さ 4,6,8(128,192,256 bit)
+  nr = nk + 6;          //ラウンド数 10,12,14
+
+  KeyExpansion(key);    //暗号化するための鍵の準備
+  memcpy(data,init,NBb); //NBにて 4ワード 16バイトと定義している
+
+  printf("  <FIPS 197  P.42 Appendix C.3 AES-256 TEST>\n\n");
+  datadump("PLAINTEXT: ",data,4);
+  datadump("KEY:       ",key,8);
+  Cipher(data);
+  datadump("暗号化:    ",data,4);
+  invCipher(data);
+  datadump("復号化:    ",data,4);
   return 0;
 }
 
@@ -157,7 +184,7 @@ int Cipher(int data[])
   int i;
 
   AddRoundKey(data,0);
-  datadump("暗号化 step1:    ",data,4);
+  // datadump("暗号化 step1:    ",data,4);
 
   for(i=1;i<nr;i++)
   {
@@ -391,6 +418,9 @@ int RotWord(int in)
   cin2[1] = cin[2];
   cin2[2] = cin[3];
   cin2[3] = cin[0];
+  // printf("cin  [%d %d %d %d]\n", cin[0], cin[1], cin[2], cin[3]);
+  // printf("cin2 [%d %d %d %d]\n\n", cin2[0], cin2[1], cin2[2], cin2[3]);
+
   return(inw2);
 }
 unsigned int RotWord_unsigned(unsigned int in)

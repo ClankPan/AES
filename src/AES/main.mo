@@ -10,20 +10,25 @@ import Nat8 "mo:base/Nat8";
 import Blob "mo:base/Blob";
 import Text "mo:base/Text";
 
+import Prim "mo:⛔";
+
+import utls "./utls/byteOp";
+
 actor {
+
   /************************************************************/
   let NB : Nat = 4;
   let NBb : Nat = 16;
   var key : [var Nat8] = Array.init<Nat8>(32, 0x00); // Nat8 == unsinged char
-  var w : [var Nat32] = Array.init<Nat32>(60, 0);
-  var data : [Nat32] = Array.freeze(Array.init<Nat32>(NB, 0));
-  var nk : Nat32 = 0; /* 4,6,8(128,192,256 bit) 鍵の長さ */
-  var nr : Nat32 = 0; /* 10,12,14 ラウンド数 */
+  var w : [var Int32] = Array.init<Int32>(60, 0);
+  var data : [Int32] = Array.freeze(Array.init<Int32>(NB, 0));
+  var nk : Int32 = 0; /* 4,6,8(128,192,256 bit) 鍵の長さ */
+  var nr : Int32 = 0; /* 10,12,14 ラウンド数 */
 
   /************************************************************/
 
-  func datadump(c : Text, dt : [Nat32], len : Nat) {
-    let cdt = to1ByteBase(dt);
+  func datadump(c : Text, dt : [Int32], len : Nat) {
+    let cdt = utls.to1ByteBase(dt);
     let blob = Blob.fromArray(cdt);
     // Debug.print(debug_show(Text.decodeUtf8(blob)));
     Debug.print(c # debug_show(cdt));
@@ -41,55 +46,57 @@ actor {
       [0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
       0x88,0x99,0xaa,0xbb,0xcc,0xdd,0xee,0xff];
 
-    var key : [Nat8] = sliceArray<Nat8>(keys, 16);
+/*----------------------------------------------*/
+    key := Array.thaw(byteCopy(Array.freeze(key), keys, 16));
     
     nk := 4;              //鍵の長さ 4,6,8(128,192,256 bit)
     nr := nk + 6;          //ラウンド数 10,12,14
 
-    // Debug.print("SubWork" # debug_show([SubWord(0), SubWord(1), SubWord(2)]));
-    // Debug.print("RotWord" # debug_show([RotWord(10), RotWord(100), RotWord(200)]));
-
-    KeyExpansion(key); //暗号化するための鍵の準備
-    data := to4ByteBase(sliceArray<Nat8>(init, NBb));
-
-    datadump("w : ", Array.freeze(w),4);
+    KeyExpansion(Array.freeze(key)); //暗号化するための鍵の準備
+    data := utls.to4ByteBase(byteCopy(utls.to1ByteBase(data), init, NBb));
 
     Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
     datadump("PLAINTEXT: ",data,4);
-    datadump("KEY:       ",to4ByteBase(key),4);
+    datadump("KEY:       ",utls.to4ByteBase(Array.freeze(key)),4);
+    data := Cipher(data);
+    datadump("暗号化:    ",data,4);
+    data := invCipher(data);
+    datadump("復号化:    ",data,4);
+
+  /*----------------------------------------------*/
+    key := Array.thaw(byteCopy(Array.freeze(key), keys, 24));
+    
+    nk := 6;              //鍵の長さ 4,6,8(128,192,256 bit)
+    nr := nk + 6;          //ラウンド数 10,12,14
+
+    KeyExpansion(Array.freeze(key)); //暗号化するための鍵の準備
+    data := utls.to4ByteBase(byteCopy(utls.to1ByteBase(data), init, NBb));
+
+    Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
+    datadump("PLAINTEXT: ",data,4);
+    datadump("KEY:       ",utls.to4ByteBase(Array.freeze(key)),6);
+    data := Cipher(data);
+    datadump("暗号化:    ",data,4);
+    data := invCipher(data);
+    datadump("復号化:    ",data,4);
+
+  /*----------------------------------------------*/
+    key := Array.thaw(byteCopy(Array.freeze(key), keys, 32));
+    
+    nk := 8;              //鍵の長さ 4,6,8(128,192,256 bit)
+    nr := nk + 6;          //ラウンド数 10,12,14
+
+    KeyExpansion(Array.freeze(key)); //暗号化するための鍵の準備
+    data := utls.to4ByteBase(byteCopy(utls.to1ByteBase(data), init, NBb));
+
+    Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
+    datadump("PLAINTEXT: ",data,4);
+    datadump("KEY:       ",utls.to4ByteBase(Array.freeze(key)),8);
     data := Cipher(data);
     datadump("暗号化:    ",data,4);
     data := invCipher(data);
     datadump("復号化:    ",data,4);
   };
-
-  // public func test() {
-  //   let keys : [Nat8] = 
-  //     [0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
-  //     0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
-  //     0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
-  //     0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f];
-    
-  //   let init : [Nat8] = 
-  //     [0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
-  //     0x88,0x99,0xaa,0xbb,0xcc,0xdd,0xee,0xff];
-
-  //   var key : [Nat8] = sliceArray<Nat8>(keys, 16);
-    
-  //   nk := 4;              //鍵の長さ 4,6,8(128,192,256 bit)
-  //   nr := nk + 6;          //ラウンド数 10,12,14
-
-  //   KeyExpansion(key); //暗号化するための鍵の準備
-  //   data := to4ByteBase(sliceArray<Nat8>(init, NBb));
-
-  //   datadump("w : ", Array.freeze(w),4);
-
-  //   Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
-  //   datadump("PLAINTEXT: ",data,4);
-  //   datadump("KEY:       ",to4ByteBase(key),4);
-  //   data := Cipher(data);
-  //   datadump("暗号化:    ",data,4);
-  // };
 
   /************************************************************/
   /* FIPS 197  P.16 Figure 7 */
@@ -133,45 +140,46 @@ actor {
     0x17,0x2b,0x04,0x7e,0xba,0x77,0xd6,0x26,0xe1,0x69,0x14,0x63,0x55,0x21,0x0c,0x7d
   ];
 
-  /************************************************************/
-/* FIPS 197  P.15 Figure 5 */ //暗号化
-  func Cipher(_data : [Nat32]) : [Nat32] {
+//   /************************************************************/
+// /* FIPS 197  P.15 Figure 5 */ //暗号化
+  func Cipher(_data : [Int32]) : [Int32] {
 
-    var data : [Nat32] = _data;
+    var data : [Int32] = _data;
     data := AddRoundKey(data,0);
 
     // datadump("暗号化 step1:    ",data,4);
 
-    var i : Nat32 = 1;
-    while(i < nr) {
+    var i = 1;
+    let _nr = Nat32.toNat(Int32.toNat32(nr));
+    while(i < _nr) {
       data := SubBytes(data);
       data := ShiftRows(data);
       data := MixColumns(data);
-      data := AddRoundKey(data,Nat32.toNat(i));
+      data := AddRoundKey(data, i);
 
       i +=1;
     };
 
     data := SubBytes(data);
     data := ShiftRows(data);
-    data := AddRoundKey(data,Nat32.toNat(i));
+    data := AddRoundKey(data, i);
     return data;
   };
 
-  /************************************************************/
-  /* FIPS 197  P.21 Figure 12 */ //復号化
-  func invCipher(_data : [Nat32]) : [Nat32] {
+//   /************************************************************/
+//   /* FIPS 197  P.21 Figure 12 */ //復号化
+  func invCipher(_data : [Int32]) : [Int32] {
+    let _nr = Nat32.toNat(Int32.toNat32(nr));
 
-    var data : [Nat32] = _data;
-    data := AddRoundKey(data,0);
+    var data : [Int32] = _data;
+    data := AddRoundKey(data, _nr);
 
     // datadump("暗号化 step1:    ",data,4);
-
-    var i : Nat32 = nr-1;
+    var i = _nr-1;
     while(i > 0) {
       data := invShiftRows(data);
       data := invSubBytes(data);
-      data := AddRoundKey(data,Nat32.toNat(i));
+      data := AddRoundKey(data, i);
       data := invMixColumns(data);
 
       i -=1;
@@ -179,26 +187,32 @@ actor {
 
     data := invShiftRows(data);
     data := invSubBytes(data);
-    data := AddRoundKey(data,Nat32.toNat(i));
+    data := AddRoundKey(data, i);
     return data;
   };
 
 
-  /************************************************************/
-  /* FIPS 197  P.19 Figure 10 */
-  // 1byteごとの配列を4byteごと配列に変換しておく
-  func AddRoundKey(data : [Nat32], n : Nat) : [Nat32] { //　w[i+NB*n]の型推論のためnはNatとする
+//   /************************************************************/
+//   /* FIPS 197  P.19 Figure 10 */
+//   // 1byteごとの配列を4byteごと配列に変換しておく
+  func AddRoundKey(data : [Int32], n : Nat) : [Int32] { //　w[i+NB*n]の型推論のためnはNatとする
     // int i;
     // for(i=0;i<NB;i++)
     // {
     //   data[i] ^= w[i+NB*n];
     // }
-    Array.mapEntries<Nat32, Nat32>(data, func(_, i){w[i+NB*n]});
+    // for(i in Iter.range(0, NB)) {
+    //   data[i] ^= w[i+NB*n]
+    // }
+    Array.mapEntries<Int32, Int32>(data, func(v, i){
+      if(i < NB) v ^ w[i+NB*n]
+      else v
+    });
   };
 
-  /************************************************************/
-  /* FIPS 197  P.16 Figure 6 */
-  func SubBytes(data :[Nat32]) : [Nat32] {
+//   /************************************************************/
+//   /* FIPS 197  P.16 Figure 6 */
+  func SubBytes(data :[Int32]) : [Int32] {
     // unsigned char *cb=(unsigned char*)data; // 4byteのint32を1byteごとにアクセスできるようにしている
     // for(i=0;i<NBb;i+=4)//理論的な意味から二重ループにしているが意味は無い
     // {
@@ -208,35 +222,22 @@ actor {
     //   }
     // }
 
-    // apply Sbox
-    let sboxedData = Array.map<Nat8, Nat8>(to1ByteBase(data), func (val) {Sbox[Nat8.toNat(val)]});
-    to4ByteBase(sboxedData);
-
-    // // [Nat32,...]->[[Nat8,Nat8,Nat8,Nat8],...]
-    // var nat8Array : [[Nat8]] = Array.map<Nat32, [Nat8]>(data, 
-    //   func(nat32){
-    //     Array.map<Nat8, Nat8>(Nat32ToNat8Array(nat32), 
-    //       func(val){
-    //         Sbox[Nat8.toNat(val)]// return Nat8
-    //       });
-    //   });
-    // // [[Nat8,Nat8,Nat8,Nat8],...]->[Nat32,...]
-    // Array.map<[Nat8], Nat32>(nat8Array, Nat8ArrayToNat32);
+    let sboxedData = Array.map<Nat8, Nat8>(utls.to1ByteBase(data), func (val) {Sbox[Nat8.toNat(val)]});
+    utls.to4ByteBase(sboxedData);
   };
 
 
-  /************************************************************/
-  /* FIPS 197  P.22 5.3.2 */
-  func invSubBytes(data :[Nat32]) : [Nat32] {
-    // apply Sbox
-    let sboxedData = Array.map<Nat8, Nat8>(to1ByteBase(data), func (val) {invSbox[Nat8.toNat(val)]});
-    to4ByteBase(sboxedData);
+//   /************************************************************/
+//   /* FIPS 197  P.22 5.3.2 */
+  func invSubBytes(data :[Int32]) : [Int32] {
+    let invSboxedData = Array.map<Nat8, Nat8>(utls.to1ByteBase(data), func (val) {invSbox[Nat8.toNat(val)]});
+    utls.to4ByteBase(invSboxedData);
   };
 
 
-  /************************************************************/
-  /* FIPS 197  P.17 Figure 8 */
-  func ShiftRows(data :[Nat32]) : [Nat32] {
+//   /************************************************************/
+//   /* FIPS 197  P.17 Figure 8 */
+  func ShiftRows(data :[Int32]) : [Int32] {
     // int i,j,i4;
     // unsigned char *cb=(unsigned char*)data;
     // unsigned char cw[NBb];
@@ -254,8 +255,9 @@ actor {
     // }
     // memcpy(cb,cw,sizeof(cw));
 
-    let cb : [Nat8] = to1ByteBase(data);
-    var cw : [var Nat8] = Array.thaw<Nat8>(sliceArray<Nat8>(cb, NBb)); // NBb(16)個分のNat8を切り出す．
+    let cb : [Nat8] = utls.to1ByteBase(data);
+    var cw : [var Nat8] = Array.init<Nat8>(NBb, 0);
+    cw := Array.thaw<Nat8>(byteCopy(Array.freeze(cw), cb, NBb)); // NBb(16)個分のNat8を切り出す．
 
     var i = 0;
     while (i < NB) {
@@ -280,15 +282,15 @@ actor {
       else v
     });
     
-    to4ByteBase(nat8Array)
+    utls.to4ByteBase(nat8Array)
   };
 
   /************************************************************/
   /* FIPS 197  P.22 Figure 13 */ 
-  func invShiftRows(data :[Nat32]) : [Nat32] {
-
-    let cb : [Nat8] = to1ByteBase(data);
-    var cw : [var Nat8] = Array.thaw<Nat8>(sliceArray<Nat8>(cb, NBb)); // NBb(16)個分のNat8を切り出す．
+  func invShiftRows(data :[Int32]) : [Int32] {
+    let cb : [Nat8] = utls.to1ByteBase(data);
+    var cw : [var Nat8] = Array.init<Nat8>(NBb, 0);
+    cw := Array.thaw<Nat8>(byteCopy(Array.freeze(cw), cb, NBb)); // NBb(16)個分のNat8を切り出す．
 
     var i = 0;
     while (i < NB) {
@@ -307,20 +309,20 @@ actor {
       i +=4;
     };
 
+    // memcpy(cb,cw,sizeof(cw));
     let nat8Array = Array.mapEntries<Nat8, Nat8>(cb, func(v, i) {
       if (i < NBb) cw[i]
       else v
     });
     
-    to4ByteBase(nat8Array)
+    utls.to4ByteBase(nat8Array)
   };
-
 
   /************************************************************/
   /* FIPS 197 P.10 4.2 乗算 (n倍) */
-  func mul(dt : Nat32, n : Nat32) : Nat32 {
-    var i : Nat32 = 8;
-    var x : Nat32 = 0;
+  func mul(dt : Int32, n : Int32) : Int32 {
+    var i : Int32 = 8;
+    var x : Int32 = 0;
     while (i > 0) {
       x <<= 1;
       if(x&0x100 != 0) x := (x ^ 0x1b) & 0xff;
@@ -341,19 +343,23 @@ actor {
     // return(x);
   };
 
-  /************************************************************/
-  func dataget(data : [Nat32], n : Nat) : Nat32 {
-    // [Nat32]->[Nat8]->Nat8->Nat->Nat32
-    Nat32.fromNat(Nat8.toNat(to1ByteBase(data)[n]))
+//   /************************************************************/
+  func dataget(data : [Int32], n : Nat) : Int32 {
+
+    //Nat8->Nat->Nat32->Int32
+    let nat8 = utls.to1ByteBase(data)[n];
+    let int32 = Int32.fromNat32(Nat32.fromNat(Nat8.toNat(nat8)));
+
+    int32
     /*
     (unsigned char*)data // void* のdataをusingedへキャスト　これはポインタ型なので，配列本体へは影響を及ぼさない
     そこから[]演算子でn番目を参照する．1byteのデータだが，それは4byteのint型として暗黙でキャストされる
     */
   };
-  /************************************************************/
-  /* FIPS 197  P.18 Figure 9 */
-  func MixColumns(data : [Nat32]) : [Nat32] {
-    var nat32Array : [var Nat32] = Array.init<Nat32>(NB, 0);
+//   /************************************************************/
+//   /* FIPS 197  P.18 Figure 9 */
+  func MixColumns(data : [Int32]) : [Int32] {
+    var int32Array : [var Int32] = Array.init<Int32>(NB, 0);
     var i = 0;
     while (i < NB) {
       let i4 = i*4;
@@ -379,12 +385,12 @@ actor {
             mul(dataget(data,i4+1),1) ^
             mul(dataget(data,i4+2),1)) << 24;
 
-     nat32Array[i] := x;
+     int32Array[i] := x;
 
       i +=1;
     };
 
-    Array.freeze<Nat32>(nat32Array);
+    Array.freeze<Int32>(int32Array);
 
     // for(i=0;i<NB;i++)
     // {
@@ -409,10 +415,10 @@ actor {
     // } 
   };
 
-  /************************************************************/
-  /* FIPS 197  P.23 5.3.3 */
-  func invMixColumns(data : [Nat32]) : [Nat32] {
-    var nat32Array : [var Nat32] = Array.init<Nat32>(NB, 0);
+//   /************************************************************/
+//   /* FIPS 197  P.23 5.3.3 */
+  func invMixColumns(data : [Int32]) : [Int32] {
+    var int32Array : [var Int32] = Array.init<Int32>(NB, 0);
     var i = 0;
     while (i < NB) {
       let i4 = i*4;
@@ -437,20 +443,19 @@ actor {
             mul(dataget(data,i4+1),13) ^
             mul(dataget(data,i4+2), 9)) << 24;
 
-     nat32Array[i] := x;
+     int32Array[i] := x;
 
       i +=1;
     };
 
-    Array.freeze<Nat32>(nat32Array);
+    Array.freeze<Int32>(int32Array);
 
   };
 
   /************************************************************/
   /* FIPS 197  P.20 Figure 11 */ /* FIPS 197  P.19  5.2 */
-  func SubWord(_in : Nat32) : Nat32 {
-    let cin : [Nat8] = Nat32ToNat8Array(_in);
-    // let nat8Array = Array.map<Nat8, Nat8>(cin, func(v){Sbox[Nat8.toNat(v)]});
+  func SubWord(_in : Int32) : Int32 {
+    let cin : [Nat8] = utls.slice1Byte_toLitleEndian(_in);
     let nat8Array : [Nat8] = [
                               Sbox[Nat8.toNat(cin[0])],
                               Sbox[Nat8.toNat(cin[1])],
@@ -458,16 +463,16 @@ actor {
                               Sbox[Nat8.toNat(cin[3])]
                              ];
 
-    Nat8ArrayToNat32(nat8Array)
+    utls.cat4Byte_fromLitleEndian(nat8Array)
   };
 
   /************************************************************/
   /* FIPS 197  P.20 Figure 11 */ /* FIPS 197  P.19  5.2 */
-  func RotWord(_in : Nat32) : Nat32 {
-    let cin  : [Nat8] = Nat32ToNat8Array(_in);
+  func RotWord(_in : Int32) : Int32 {
+    let cin  : [Nat8] = utls.slice1Byte_toLitleEndian(_in);
     let cin2 : [Nat8] = [cin[1], cin[2], cin[3], cin[0]];
 
-    Nat8ArrayToNat32(cin2)
+    utls.cat4Byte_fromLitleEndian(cin2)
   };
 
   /************************************************************/
@@ -475,18 +480,17 @@ actor {
   func KeyExpansion(key : [Nat8]) {
 
     // Natへのキャスト
-    let _nk = Nat32.toNat(nk);
-    let _nr = Nat32.toNat(nr);
+    let _nk = Nat32.toNat(Int32.toNat32(nk));
+    let _nr = Nat32.toNat(Int32.toNat32(nr));
 
     /* FIPS 197  P.27 Appendix A.1 Rcon[i/Nk] */ //又は mulを使用する
-    let Rcon : [Nat32]= [0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36];
+    let Rcon : [Int32]= [0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36];
 
-    // w := Array.thaw(to4ByteBase( sliceArray<Nat8>(key, Nat32.toNat(nk*4))));
-    w := Array.thaw(to4ByteBase( byteCopy(to1ByteBase(Array.freeze(w)), key, _nk*4)));
+    w := Array.thaw(utls.to4ByteBase( byteCopy(utls.to1ByteBase(Array.freeze(w)), key, _nk*4)));
 
     var i = _nk;
     while (i < NB*(_nr+1)) {
-      var temp : Nat32 = w[i-1];
+      var temp : Int32 = w[i-1];
       if((i%_nk) == 0) 
         temp := SubWord(RotWord(temp)) ^ Rcon[(i/_nk)-1]
       else if (_nk > 6 and (i%_nk) == 4)
@@ -497,107 +501,19 @@ actor {
       i +=1;
     };
 
-
-    // for(i=nk;i<NB*(nr+1);i++)
-    // {
-    //   temp = w[i-1];
-    //   if((i%nk) == 0)
-    //     temp = SubWord(RotWord(temp)) ^ Rcon[(i/nk)-1];
-    //   else if(nk > 6 && (i%nk) == 4)
-    //     temp = SubWord(temp);
-    //   w[i] = w[i-nk] ^ temp;
-    // }
   };
 
 
-
-
-
-  /************************************************************/ 
+  // /************************************************************/ 
   func byteCopy(to : [Nat8], from : [Nat8], n : Nat) : [Nat8] {
     Array.mapEntries<Nat8, Nat8>(to, func(v, i){
       if (i < n) from[i]
       else v
     })
   };
-  //先頭からn個までを切り出す
-  func sliceArray<T>(array : [T], n : Nat) : [T] {
-    var i = 0;
-    Array.mapFilter<T, T>(array, func(_) {
-      let op = if (i < n) ?array[i]
-      else null;
-      i += 1;
-      op
-    })
-  };
-  func to1ByteBase(nat32Array : [Nat32]) : [Nat8] {
-    // [Nat32,...]->[Nat8,Nat8,Nat8,Nat8,...]
-    Array.flatten<Nat8>(
-      Array.map<Nat32,[Nat8]>(nat32Array, Nat32ToNat8Array)
-    );
-    // Array.flatten<Nat8>(Array.map<Nat32, [Nat8]>(nat32Array, func(nat32){
-    //   Array.map<Nat8, Nat8>(Nat32ToNat8Array(nat32), func(val){
-    //       Sbox[Nat8.toNat(val)]// return Nat8
-    //     });
-    //   }));
-  };
-  func to4ByteBase(nat8Array : [Nat8]) : [Nat32] {
-    // 4個ごとに折り畳んで、それらをNat32にする
-    Array.map<[Nat8], Nat32>(fold4Nat8Array(nat8Array), Nat8ArrayToNat32);
-  };
-  func Nat32ToNat8Array(nat32 : Nat32) : [Nat8] {
-    let a : Nat8 = Nat8.fromNat( Nat32.toNat((nat32 >> 24) & 0xFF));
-    let b : Nat8 = Nat8.fromNat( Nat32.toNat((nat32 >> 16) & 0xFF));
-    let c : Nat8 = Nat8.fromNat( Nat32.toNat((nat32 >>  8) & 0xFF));
-    let d : Nat8 = Nat8.fromNat( Nat32.toNat((nat32 >>  0) & 0xFF));
-    [a,b,c,d]
-  };
-  func Nat8ArrayToNat32(nat8Array : [Nat8]) : Nat32 {
-    // Nat8->Nat->Nat32
-    let a = Nat32.fromNat((Nat8.toNat(nat8Array[0]))) << 24; 
-    let b = Nat32.fromNat((Nat8.toNat(nat8Array[1]))) << 16; 
-    let c = Nat32.fromNat((Nat8.toNat(nat8Array[2]))) <<  8; 
-    let d = Nat32.fromNat((Nat8.toNat(nat8Array[3]))) <<  0; 
-    a | b | c | d
-  };
-  func flattenNat8ArrayArray(nat8ArrayArray : [[Nat8]]) : [Nat8] {
-    Array.flatten(nat8ArrayArray);
-  };
-  func fold4Nat8Array(nat8Array : [Nat8]) : [[Nat8]] {
-    var i = 0;
-    Array.mapFilter<Nat8,[Nat8]>(nat8Array, func(_) : ?[Nat8] {
-      let op = if (i%4 == 0) ?[nat8Array[i],nat8Array[i+1],nat8Array[i+2],nat8Array[i+3]]
-      else null;
-      i += 1;
-      op
-    });
-  };
 
 
 };
-
-
-/*
-data [Int32] size 16 には、init(usinged char)が16個分入っている
-unsigned char *cb=(unsigned char*)data; で　unsigned charにキャストする
-
-1バイトのcharを、int32の配列に変換して、それを1byteで解釈する
-
-4byteのInt32を　1byteのNat32 x 4に解釈する方法。
-
-Int32%(256^4), Int32%(256^3), Int32%(256^2), Int32%(256^1)
-
-10,000,000,000
-
-リトルエンディアンと符号付きの話、
-
-Int32ではなく、Nat32の方がいいかも。usinged charをmemcopyしているから、実質Nat8の配列と同じ。
-
-ということは、初めからNat8で型をとった方がいい。
-
-[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 215, 170, 116, 252, 211, 175, 114, 251, 219, 166, 120, 240, 215, 171, 118, 255, 181, 146, 98, 240, 102, 61, 16, 11, 189, 155, 104, 251, 106, 48, 30, 4, 177, 224, 144, 246, 215, 221, 128, 253, 106, 70, 232, 6, 0, 118, 246, 2, 137, 162, 231, 157, 94, 127, 103, 96, 52, 57, 143, 102, 52, 79, 121, 100, 13, 20, 164, 149, 83, 107, 195, 245, 103, 82, 76, 147, 83, 29, 53, 247, 169, 130, 204, 88, 250, 233, 15, 173, 157, 187, 67, 62, 206, 166, 118, 201, 141, 186, 17, 147, 119, 83, 30, 62, 234, 232, 93, 0, 36, 78, 43, 201, 162, 75, 204, 37, 213, 24, 210, 27, 63, 240, 143, 27, 27, 190, 164, 210, 12, 2, 121, 145, 217, 26, 171, 138, 230, 234, 36, 145, 253, 84, 128, 67, 44, 207, 99, 243, 245, 213, 200, 121, 19, 63, 236, 232, 238, 107, 108, 171, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-
-*/
 
 
 
