@@ -183,7 +183,7 @@ module {
       data := AddRoundKey(data, _nr);
 
       // datadump("暗号化 step1:    ",data,4);
-      var i = _nr-1;
+      var i : Nat = _nr-1;
       while(i > 0) {
         data := invShiftRows(data);
         data := invSubBytes(data);
