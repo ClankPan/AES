@@ -3,23 +3,6 @@
     "AES": {
       "main": "src/AES/main.mo",
       "type": "motoko"
-    },
-    "utl_test" : {
-      "main": "src/AES/test.mo",
-      "type": "motoko"
-    },
-    "AES_assets": {
-      "dependencies": [
-        "AES"
-      ],
-      "frontend": {
-        "entrypoint": "src/AES_assets/src/index.html"
-      },
-      "source": [
-        "src/AES_assets/assets",
-        "dist/AES_assets/"
-      ],
-      "type": "assets"
     }
   },
   "defaults": {

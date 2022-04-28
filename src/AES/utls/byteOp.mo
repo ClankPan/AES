@@ -53,6 +53,13 @@ module {
     });
   };
 
+  func byteCopy(to : [Nat8], from : [Nat8], n : Nat) : [Nat8] {
+    Array.mapEntries<Nat8, Nat8>(to, func(v, i){
+      if (i < n) from[i]
+      else v
+    })
+  };
+
   // // /************************************************************/
   // // /* FIPS 197  P.20 Figure 11 */ /* FIPS 197  P.19  5.2 */
   // public func RotWord(_in :  Int32) : Int32 {
