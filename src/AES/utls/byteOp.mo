@@ -53,7 +53,7 @@ module {
     });
   };
 
-  func byteCopy(to : [Nat8], from : [Nat8], n : Nat) : [Nat8] {
+  public func byteCopy(to : [Nat8], from : [Nat8], n : Nat) : [Nat8] {
     Array.mapEntries<Nat8, Nat8>(to, func(v, i){
       if (i < n) from[i]
       else v
