@@ -22,7 +22,7 @@ import Prim "mo:⛔";
 import utls "./utls/byteOp";
 
 module {
-  public class AES() {
+  public class AES(keyBitLen : Nat) { // 128,192,256 bit
 
     /************************************************************/
     let NB : Nat = 4;
@@ -33,8 +33,46 @@ module {
     var nk : Int32 = 0; /* 4,6,8(128,192,256 bit) 鍵の長さ */
     var nr : Int32 = 0; /* 10,12,14 ラウンド数 */
 
+    switch (keyBitLen) {
+      case (128) nk := 4;
+      case (192) nk := 6;
+      case (256) nk := 8;
+      case (_) assert(false);
+    };
+    nr := nk + 6;
+
     /************************************************************/
 
+    public func encrypto({_plainText : Blob; _key : Blob}) : Blob  {
+
+      let _nk = Nat32.toNat(Int32.toNat32(nk));
+      let _nr = Nat32.toNat(Int32.toNat32(nr));
+
+      // plain text must be 128bit(==16byte) length
+      if (_plainText.size() != 16) assert(false);
+      // key must be 128,192,256 bit
+      // if (_key.size() != _nk *4) assert(false);
+
+      
+      let key : [Nat8] = Blob.toArray(_key);
+      let plainText : [Nat8] = Blob.toArray(_plainText);
+
+      KeyExpansion(key); //暗号化するための鍵の準備
+      data := utls.to4ByteBase(utls.byteCopy(utls.to1ByteBase(data), plainText, NBb));
+
+      Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
+      datadump("PLAINTEXT: ",data,4);
+      datadump("KEY:       ",utls.to4ByteBase(key),_nk+2);
+      data := Cipher(data);
+      datadump("暗号化:    ",data,4);
+      data := invCipher(data);
+      datadump("復号化:    ",data,4);
+
+      Blob.fromArray(utls.to1ByteBase(data));
+
+    };
+
+    /************************************************************/
     func datadump(c : Text, dt : [Int32], len : Nat) {
       let cdt = utls.to1ByteBase(dt);
       let blob = Blob.fromArray(cdt);
@@ -53,57 +91,60 @@ module {
       let init : [Nat8] = 
         [0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
         0x88,0x99,0xaa,0xbb,0xcc,0xdd,0xee,0xff];
-
-  /*----------------------------------------------*/
-      key := Array.thaw(utls.byteCopy(Array.freeze(key), keys, 16));
       
-      nk := 4;              //鍵の長さ 4,6,8(128,192,256 bit)
-      nr := nk + 6;          //ラウンド数 10,12,14
-
-      KeyExpansion(Array.freeze(key)); //暗号化するための鍵の準備
-      data := utls.to4ByteBase(utls.byteCopy(utls.to1ByteBase(data), init, NBb));
-
-      Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
-      datadump("PLAINTEXT: ",data,4);
-      datadump("KEY:       ",utls.to4ByteBase(Array.freeze(key)),4);
-      data := Cipher(data);
-      datadump("暗号化:    ",data,4);
-      data := invCipher(data);
-      datadump("復号化:    ",data,4);
+      let _nk = Nat32.toNat(Int32.toNat32(nk));
+      let _nr = Nat32.toNat(Int32.toNat32(nr));
 
     /*----------------------------------------------*/
-      key := Array.thaw(utls.byteCopy(Array.freeze(key), keys, 24));
+      key := Array.thaw(utls.byteCopy(Array.freeze(key), keys, 4*_nk));
       
-      nk := 6;              //鍵の長さ 4,6,8(128,192,256 bit)
-      nr := nk + 6;          //ラウンド数 10,12,14
+      // nk := 4;              //鍵の長さ 4,6,8(128,192,256 bit)
+      // nr := nk + 6;          //ラウンド数 10,12,14
 
       KeyExpansion(Array.freeze(key)); //暗号化するための鍵の準備
       data := utls.to4ByteBase(utls.byteCopy(utls.to1ByteBase(data), init, NBb));
 
       Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
       datadump("PLAINTEXT: ",data,4);
-      datadump("KEY:       ",utls.to4ByteBase(Array.freeze(key)),6);
+      datadump("KEY:       ",utls.to4ByteBase(Array.freeze(key)), _nk+2);
       data := Cipher(data);
       datadump("暗号化:    ",data,4);
       data := invCipher(data);
       datadump("復号化:    ",data,4);
 
-    /*----------------------------------------------*/
-      key := Array.thaw(utls.byteCopy(Array.freeze(key), keys, 32));
+    // /*----------------------------------------------*/
+    //   key := Array.thaw(utls.byteCopy(Array.freeze(key), keys, 24));
       
-      nk := 8;              //鍵の長さ 4,6,8(128,192,256 bit)
-      nr := nk + 6;          //ラウンド数 10,12,14
+    //   nk := 6;              //鍵の長さ 4,6,8(128,192,256 bit)
+    //   nr := nk + 6;          //ラウンド数 10,12,14
 
-      KeyExpansion(Array.freeze(key)); //暗号化するための鍵の準備
-      data := utls.to4ByteBase(utls.byteCopy(utls.to1ByteBase(data), init, NBb));
+    //   KeyExpansion(Array.freeze(key)); //暗号化するための鍵の準備
+    //   data := utls.to4ByteBase(utls.byteCopy(utls.to1ByteBase(data), init, NBb));
 
-      Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
-      datadump("PLAINTEXT: ",data,4);
-      datadump("KEY:       ",utls.to4ByteBase(Array.freeze(key)),8);
-      data := Cipher(data);
-      datadump("暗号化:    ",data,4);
-      data := invCipher(data);
-      datadump("復号化:    ",data,4);
+    //   Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
+    //   datadump("PLAINTEXT: ",data,4);
+    //   datadump("KEY:       ",utls.to4ByteBase(Array.freeze(key)),6);
+    //   data := Cipher(data);
+    //   datadump("暗号化:    ",data,4);
+    //   data := invCipher(data);
+    //   datadump("復号化:    ",data,4);
+
+    // /*----------------------------------------------*/
+    //   key := Array.thaw(utls.byteCopy(Array.freeze(key), keys, 32));
+      
+    //   nk := 8;              //鍵の長さ 4,6,8(128,192,256 bit)
+    //   nr := nk + 6;          //ラウンド数 10,12,14
+
+    //   KeyExpansion(Array.freeze(key)); //暗号化するための鍵の準備
+    //   data := utls.to4ByteBase(utls.byteCopy(utls.to1ByteBase(data), init, NBb));
+
+    //   Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
+    //   datadump("PLAINTEXT: ",data,4);
+    //   datadump("KEY:       ",utls.to4ByteBase(Array.freeze(key)),8);
+    //   data := Cipher(data);
+    //   datadump("暗号化:    ",data,4);
+    //   data := invCipher(data);
+    //   datadump("復号化:    ",data,4);
     };
 
     /************************************************************/
