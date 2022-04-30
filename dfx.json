@@ -1,14 +1,14 @@
 {
   "canisters": {
     "AES": {
-      "main": "src/AES/main.mo",
+      "main": "test/main.mo",
       "type": "motoko"
     }
   },
   "defaults": {
     "build": {
       "args": "",
-      "packtool": ""
+      "packtool": "vessel sources"
     }
   },
   "dfx": "0.8.4",

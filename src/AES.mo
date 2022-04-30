@@ -19,7 +19,7 @@ import Text "mo:base/Text";
 
 import Prim "mo:⛔";
 
-import utls "./utls/byteOp";
+import utls "mo:byteOp/byteOp";
 
 module {
   public class AES(keyBitLen : Nat) { // 128,192,256 bit

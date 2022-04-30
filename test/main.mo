@@ -1,4 +1,4 @@
-import AES "./lib";
+import AES "../src/AES";
 import Blob "mo:base/Blob";
 actor {
   let aes = AES.AES(128);
