@@ -49,7 +49,7 @@ module {
       let _nr = Nat32.toNat(Int32.toNat32(nr));
 
       // plain text must be 128bit(==16byte) length
-      if (_plainText.size() != 16) assert(false);
+      // if (_plainText.size() != 16) assert(false);
       // key must be 128,192,256 bit
       // if (_key.size() != _nk *4) assert(false);
 
