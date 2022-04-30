@@ -6,6 +6,8 @@
  (__)\___)\_)(_/(____)\_)(_/(__)\_)__) (__) 
 
   made by ClankPan with support from ICME /GPL
+
+  移植元->https://free.pjc.co.jp/AES/index.html
 */
 
 import Array "mo:base/Array";
@@ -65,8 +67,8 @@ module {
       datadump("KEY:       ",utls.to4ByteBase(key),_nk+2);
       data := Cipher(data);
       datadump("暗号化:    ",data,4);
-      data := invCipher(data);
-      datadump("復号化:    ",data,4);
+      // data := invCipher(data);
+      // datadump("復号化:    ",data,4);
 
       Blob.fromArray(utls.to1ByteBase(data));
 
