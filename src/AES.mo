@@ -63,10 +63,10 @@ module {
       data := utls.to4ByteBase(utls.byteCopy(utls.to1ByteBase(data), plainArray, NBb));
 
       // Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
-      datadump("PLAINTEXT: ",data,4);
+      // datadump("PLAINTEXT: ",data,4);
       // datadump("KEY:       ",utls.to4ByteBase(key),_nk+2);
       data := Cipher(data);
-      datadump("暗号化:    ",data,4);
+      // datadump("暗号化:    ",data,4);
       // data := invCipher(data);
       // datadump("復号化:    ",data,4);
 
@@ -87,12 +87,12 @@ module {
       data := utls.to4ByteBase(utls.byteCopy(utls.to1ByteBase(data), cypherArray, NBb));
 
       // Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
-      datadump("CYPHERTEXT: ",data,4);
+      // datadump("CYPHERTEXT: ",data,4);
       // datadump("KEY:       ",utls.to4ByteBase(key),_nk+2);
       // data := Cipher(data);
       // datadump("暗号化:    ",data,4);
       data := invCipher(data);
-      datadump("復号化:    ",data,4);
+      // datadump("復号化:    ",data,4);
 
       Blob.fromArray(utls.to1ByteBase(data));
 
