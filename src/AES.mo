@@ -45,7 +45,7 @@ module {
 
     /************************************************************/
 
-    public func encrypto({_plainText : Blob; _key : Blob}) : Blob  {
+    public func encrypto({_plainBlob : Blob; _keyBlob : Blob}) : Blob  {
 
       let _nk = Nat32.toNat(Int32.toNat32(nk));
       let _nr = Nat32.toNat(Int32.toNat32(nr));
@@ -56,11 +56,11 @@ module {
       // if (_key.size() != _nk *4) assert(false);
 
       
-      let key : [Nat8] = Blob.toArray(_key);
-      let plainText : [Nat8] = Blob.toArray(_plainText);
+      let keyArray : [Nat8] = Blob.toArray(_keyBlob);
+      let plainArray : [Nat8] = Blob.toArray(_plainBlob);
 
-      KeyExpansion(key); //暗号化するための鍵の準備
-      data := utls.to4ByteBase(utls.byteCopy(utls.to1ByteBase(data), plainText, NBb));
+      KeyExpansion(keyArray); //暗号化するための鍵の準備
+      data := utls.to4ByteBase(utls.byteCopy(utls.to1ByteBase(data), plainArray, NBb));
 
       // Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
       // datadump("PLAINTEXT: ",data,4);
@@ -74,17 +74,17 @@ module {
 
     };
   
-    public func decrypto({_cypherText : Blob; _key : Blob}) : Blob  {
+    public func decrypto({_cypherBlob : Blob; _keyBlob : Blob}) : Blob  {
 
       let _nk = Nat32.toNat(Int32.toNat32(nk));
       let _nr = Nat32.toNat(Int32.toNat32(nr));
 
       
-      let key : [Nat8] = Blob.toArray(_key);
-      let cypherText : [Nat8] = Blob.toArray(_cypherText);
+      let keyArray : [Nat8] = Blob.toArray(_keyBlob);
+      let cypherArray : [Nat8] = Blob.toArray(_cypherBlob);
 
-      KeyExpansion(key); //暗号化するための鍵の準備
-      data := utls.to4ByteBase(utls.byteCopy(utls.to1ByteBase(data), cypherText, NBb));
+      KeyExpansion(keyArray); //暗号化するための鍵の準備
+      data := utls.to4ByteBase(utls.byteCopy(utls.to1ByteBase(data), cypherArray, NBb));
 
       // Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
       // datadump("PLAINTEXT: ",data,4);
