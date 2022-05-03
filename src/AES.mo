@@ -62,13 +62,37 @@ module {
       KeyExpansion(key); //暗号化するための鍵の準備
       data := utls.to4ByteBase(utls.byteCopy(utls.to1ByteBase(data), plainText, NBb));
 
-      Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
-      datadump("PLAINTEXT: ",data,4);
-      datadump("KEY:       ",utls.to4ByteBase(key),_nk+2);
+      // Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
+      // datadump("PLAINTEXT: ",data,4);
+      // datadump("KEY:       ",utls.to4ByteBase(key),_nk+2);
       data := Cipher(data);
       datadump("暗号化:    ",data,4);
       // data := invCipher(data);
       // datadump("復号化:    ",data,4);
+
+      Blob.fromArray(utls.to1ByteBase(data));
+
+    };
+  
+    public func decrypto({_cypherText : Blob; _key : Blob}) : Blob  {
+
+      let _nk = Nat32.toNat(Int32.toNat32(nk));
+      let _nr = Nat32.toNat(Int32.toNat32(nr));
+
+      
+      let key : [Nat8] = Blob.toArray(_key);
+      let cypherText : [Nat8] = Blob.toArray(_cypherText);
+
+      KeyExpansion(key); //暗号化するための鍵の準備
+      data := utls.to4ByteBase(utls.byteCopy(utls.to1ByteBase(data), cypherText, NBb));
+
+      // Debug.print("  <FIPS 197  P.35 Appendix C.1 AES-128 TEST>\n\n");
+      // datadump("PLAINTEXT: ",data,4);
+      // datadump("KEY:       ",utls.to4ByteBase(key),_nk+2);
+      // data := Cipher(data);
+      // datadump("暗号化:    ",data,4);
+      data := invCipher(data);
+      datadump("復号化:    ",data,4);
 
       Blob.fromArray(utls.to1ByteBase(data));
 
